@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "n2t-mine:block/ic_block" }
+  }
+}

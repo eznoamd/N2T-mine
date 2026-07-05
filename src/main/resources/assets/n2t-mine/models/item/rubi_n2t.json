@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "n2t-mine:item/rubi_n2t"
+  }
+}

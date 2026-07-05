@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "n2t-mine",
+	"version": "${version}",
+	"name": "N2T-mine",
+	"description": "A mod that attempts to make basic logic CIs to Minecraft.",
+	"authors": [
+		"Ezno AMD"
+	],
+	"contact": {
+		"github": "https://github.com/eznoamd/N2T-mine"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/n2t-mine/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.enzo.n2tmine.N2TMine"
+		]
+	},
+	"mixins": [
+		"n2t-mine.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

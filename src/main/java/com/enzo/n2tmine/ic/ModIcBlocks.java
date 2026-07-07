@@ -14,7 +14,7 @@ public class ModIcBlocks {
     // Bloco visivel, colocavel pelo jogador
     public static final IcBlock IC_BLOCK = register(
             "ic_block",
-            new IcBlock(AbstractBlock.Settings.create().mapColor(MapColor.IRON_GRAY).strength(3.0f)),
+            new IcBlock(AbstractBlock.Settings.create().mapColor(MapColor.IRON_GRAY).strength(3.0f).nonOpaque()),
             true
     );
 

@@ -19,8 +19,18 @@ public class IcBlockEntity extends BlockEntity {
 
     private static final Direction[] SIDES = { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST };
 
-    private int roomId = -1;
+    // masterRoomId = o "design" (sala editavel, compartilhada por todas as copias).
+    // instanceRoomId = a sala-clone privada deste bloco, onde o I/O dele realmente roda.
+    private int masterRoomId = -1;
+    private int instanceRoomId = -1;
+
     private final Map<Direction, Integer> outputPower = new EnumMap<>(Direction.class);
+
+    // Nome do design, cacheado e sincronizado pro cliente (pra desenhar em cima do bloco).
+    private String cachedName = "";
+
+    // Transiente: re-forca mestre+instancia uma vez por carregamento.
+    private boolean chunkForced = false;
 
     public IcBlockEntity(BlockPos pos, BlockState state) {
         super(ModIcBlockEntities.IC_BLOCK_ENTITY, pos, state);
@@ -33,25 +43,75 @@ public class IcBlockEntity extends BlockEntity {
         return outputPower.getOrDefault(direction, 0);
     }
 
+    /** Nome do design (cacheado, disponivel no cliente pra renderizar em cima). */
+    public String getCachedName() {
+        return cachedName;
+    }
+
+    /** O design (mestre) deste bloco -- e isso que vai no item ao quebrar. */
+    public int getDesignId() {
+        return masterRoomId;
+    }
+
+    public int getInstanceRoomId() {
+        return instanceRoomId;
+    }
+
+    /** Bloco colocado a partir de um item que ja tinha design: entra nesse design
+     *  e ganha uma instancia (clone) privada. */
+    public void adoptRoom(ServerWorld outerWorld, int existingMasterId) {
+        this.masterRoomId = existingMasterId;
+        this.instanceRoomId = IcRoomState.get(outerWorld.getServer())
+                .createInstance(outerWorld.getServer(), existingMasterId);
+        markDirty();
+    }
+
+    /** Usado pela clonagem de sala pra religar um CI aninhado ao design correto
+     *  e a instancia recem-criada pra ele. */
+    public void setDesignAndInstance(int masterRoomId, int instanceRoomId) {
+        this.masterRoomId = masterRoomId;
+        this.instanceRoomId = instanceRoomId;
+        this.chunkForced = true; // ja forcado na criacao da instancia
+        markDirty();
+    }
+
     public void teleportPlayerInside(ServerWorld outerWorld, ServerPlayerEntity player) {
         ensureRoom(outerWorld);
         ServerWorld icWorld = outerWorld.getServer().getWorld(ModDimensions.IC_WORLD);
         if (icWorld == null) return;
+        IcRoomState rooms = IcRoomState.get(outerWorld.getServer());
 
-        BlockPos origin = IcRoomState.get(outerWorld.getServer()).getRoomOrigin(roomId);
+        // O jogador entra sempre no MESTRE (pra editar o design). O destino de
+        // retorno do mestre aponta pra ESTE bloco (ultima entrada usada).
+        BlockPos exitPos = rooms.getExitPos(masterRoomId);
+        if (icWorld.getBlockEntity(exitPos) instanceof IcExitBlockEntity exitBe) {
+            exitBe.setReturnLocation(outerWorld.getRegistryKey(), pos);
+        }
+
+        BlockPos origin = rooms.getRoomOrigin(masterRoomId);
         int mid = (IcRoomState.SIZE - 1) / 2;
         BlockPos target = origin.add(mid, 1, mid);
 
-        // ATENCAO: a assinatura de ServerPlayerEntity#teleport tambem varia por
-        // versao. Se der erro, seu IDE vai mostrar a assinatura certa disponivel.
         player.teleport(icWorld, target.getX() + 0.5, target.getY(), target.getZ() + 0.5,
                 Set.<PositionFlag>of(), 0f, 0f);
     }
 
     private void ensureRoom(ServerWorld outerWorld) {
-        if (roomId < 0) {
-            roomId = IcRoomState.get(outerWorld.getServer()).getOrCreateRoom(outerWorld, pos);
+        IcRoomState rooms = IcRoomState.get(outerWorld.getServer());
+        if (masterRoomId < 0) {
+            // Bloco totalmente novo: cria um design (mestre vazio) e uma instancia.
+            masterRoomId = rooms.createDesign(outerWorld);
+            instanceRoomId = rooms.createInstance(outerWorld.getServer(), masterRoomId);
             markDirty();
+        } else if (instanceRoomId < 0) {
+            // Tem design (veio de item/copia) mas ainda sem instancia: cria a instancia.
+            instanceRoomId = rooms.createInstance(outerWorld.getServer(), masterRoomId);
+            markDirty();
+        }
+        if (!chunkForced && masterRoomId >= 0 && instanceRoomId >= 0) {
+            rooms.forceRoom(outerWorld.getServer(), masterRoomId);
+            rooms.forceRoom(outerWorld.getServer(), instanceRoomId);
+            chunkForced = true;
         }
     }
 
@@ -62,27 +122,41 @@ public class IcBlockEntity extends BlockEntity {
         ServerWorld icWorld = serverWorld.getServer().getWorld(ModDimensions.IC_WORLD);
         if (icWorld == null) return;
 
-        BlockPos origin = IcRoomState.get(serverWorld.getServer()).getRoomOrigin(be.roomId);
+        // Mantem o nome do design em cache e sincroniza com o cliente quando muda,
+        // pra o renderizador desenhar em cima do bloco.
+        String currentName = IcRoomState.get(serverWorld.getServer()).getRoomName(be.masterRoomId);
+        if (!currentName.equals(be.cachedName)) {
+            be.cachedName = currentName;
+            serverWorld.updateListeners(pos, state, state, net.minecraft.block.Block.NOTIFY_ALL);
+            be.markDirty();
+        }
+
+        // O I/O deste bloco roda na sua INSTANCIA privada (nao no mestre).
+        BlockPos origin = IcRoomState.get(serverWorld.getServer()).getRoomOrigin(be.instanceRoomId);
         int max = IcRoomState.SIZE - 1;
         int mid = max / 2;
-        int midY = IcRoomState.HEIGHT / 2;
+        int midY = IcRoomState.PORT_Y;
 
         boolean anyChanged = false;
 
         for (Direction dir : SIDES) {
-            // 1) Le o sinal externo chegando nessa face do bloco visivel
-            BlockPos neighborPos = pos.offset(dir);
-            int externalInput = serverWorld.getEmittedRedstonePower(neighborPos, dir.getOpposite());
-
-            // 2) Empurra esse valor pra porta correspondente dentro da sala
             BlockPos portPos = portPosition(origin, dir, mid, midY, max);
-            if (icWorld.getBlockEntity(portPos) instanceof IcPortBlockEntity portBe) {
+            if (!(icWorld.getBlockEntity(portPos) instanceof IcPortBlockEntity portBe)) {
+                continue;
+            }
+
+            if (portBe.getRole() == PortRole.INPUT) {
+                int externalInput = serverWorld.getEmittedRedstonePower(pos.offset(dir), dir);
                 portBe.setInjectedPower(icWorld, portPos, externalInput);
 
-                // 3) Le o que esta acontecendo dentro da sala, do lado de dentro dessa porta
-                Direction inward = dir.getOpposite();
-                BlockPos insidePos = portPos.offset(inward);
-                int internalReading = icWorld.getEmittedRedstonePower(insidePos, inward.getOpposite());
+                if (be.outputPower.getOrDefault(dir, 0) != 0) {
+                    be.outputPower.put(dir, 0);
+                    anyChanged = true;
+                }
+            } else {
+                portBe.setInjectedPower(icWorld, portPos, 0);
+
+                int internalReading = icWorld.getReceivedRedstonePower(portPos);
 
                 int previous = be.outputPower.getOrDefault(dir, 0);
                 if (internalReading != previous) {
@@ -111,12 +185,35 @@ public class IcBlockEntity extends BlockEntity {
     @Override
     protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         super.writeNbt(nbt, registries);
-        nbt.putInt("roomId", roomId);
+        nbt.putInt("masterRoomId", masterRoomId);
+        nbt.putInt("instanceRoomId", instanceRoomId);
+        nbt.putString("cachedName", cachedName);
     }
 
     @Override
     protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         super.readNbt(nbt, registries);
-        roomId = nbt.getInt("roomId");
+        // compat: se existir o "roomId" antigo, usa como master (design).
+        if (nbt.contains("masterRoomId")) {
+            masterRoomId = nbt.getInt("masterRoomId");
+        } else if (nbt.contains("roomId")) {
+            masterRoomId = nbt.getInt("roomId");
+        }
+        instanceRoomId = nbt.contains("instanceRoomId") ? nbt.getInt("instanceRoomId") : -1;
+        cachedName = nbt.contains("cachedName") ? nbt.getString("cachedName") : "";
+    }
+
+    // --- Sincronizacao com o cliente (pra o renderizador ver o nome) ---
+
+    @Override
+    public net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket toUpdatePacket() {
+        return net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket.create(this);
+    }
+
+    @Override
+    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registries) {
+        NbtCompound nbt = new NbtCompound();
+        writeNbt(nbt, registries);
+        return nbt;
     }
 }

@@ -16,6 +16,9 @@
 	"entrypoints": {
 		"main": [
 			"com.enzo.n2tmine.N2TMine"
+		],
+		"client": [
+			"com.enzo.n2tmine.client.N2TMineClient"
 		]
 	},
 	"mixins": [

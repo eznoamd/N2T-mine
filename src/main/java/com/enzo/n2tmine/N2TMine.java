@@ -1,7 +1,11 @@
 package com.enzo.n2tmine;
 
+import com.enzo.n2tmine.ic.ModComponents;
 import com.enzo.n2tmine.ic.ModIcBlockEntities;
 import com.enzo.n2tmine.ic.ModIcBlocks;
+import com.enzo.n2tmine.ic.net.ModNetworking;
+import com.enzo.n2tmine.ic.recipe.ModRecipes;
+import com.enzo.n2tmine.ic.screen.ModScreenHandlers;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.item.Item;
@@ -27,9 +31,13 @@ public class N2TMine implements ModInitializer {
 	public void onInitialize() {
 		LOGGER.info("Hello Fabric world!");
 
-		// Registra os blocos e block entities do sistema de CI
+		// Registra os blocos, block entities e componentes do sistema de CI
+		ModComponents.initialize();
 		ModIcBlocks.initialize();
 		ModIcBlockEntities.initialize();
+		ModScreenHandlers.initialize();
+		ModNetworking.initialize();
+		ModRecipes.initialize();
 
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS).register(entries -> {
 			entries.add(RUBI_N2T);

@@ -1,5 +1,6 @@
 {
   "variants": {
-    "": { "model": "n2t-mine:block/ic_port_block" }
+    "output=false": { "model": "n2t-mine:block/ic_port_block" },
+    "output=true":  { "model": "n2t-mine:block/ic_port_block_output" }
   }
 }

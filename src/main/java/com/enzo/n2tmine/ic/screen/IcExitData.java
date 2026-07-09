@@ -4,10 +4,7 @@ import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
 
-/**
- * Dados que o servidor envia pro cliente no momento em que o menu do bloco de
- * saida abre: qual sala e o nome atual dela.
- */
+/** Dados enviados ao cliente ao abrir o menu: qual sala (design) e o nome atual. */
 public record IcExitData(int roomId, String name) {
 
     public static final PacketCodec<RegistryByteBuf, IcExitData> CODEC = PacketCodec.tuple(

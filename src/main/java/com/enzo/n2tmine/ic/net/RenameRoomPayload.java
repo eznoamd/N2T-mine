@@ -6,7 +6,7 @@ import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 
-/** Cliente -> Servidor: renomeia a sala de roomId para `name`. */
+/** Cliente -> Servidor: renomeia a sala (design) de roomId para `name`. */
 public record RenameRoomPayload(int roomId, String name) implements CustomPayload {
 
     public static final CustomPayload.Id<RenameRoomPayload> ID =

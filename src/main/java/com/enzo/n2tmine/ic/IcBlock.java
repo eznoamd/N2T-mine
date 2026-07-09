@@ -55,11 +55,13 @@ public class IcBlock extends Block implements BlockEntityProvider {
             int designId = be.getDesignId();
             int instanceId = be.getInstanceRoomId();
             if (!player.isCreative()) {
-                ItemStack stack = new ItemStack(ModIcBlocks.IC_BLOCK);
+                ItemStack stack = new ItemStack(ModBlocks.IC_BLOCK);
                 if (designId >= 0) {
                     // O item leva o DESIGN (mestre), nao a instancia -- assim, ao
                     // recolocar, ele cria uma nova instancia do mesmo design.
                     stack.set(ModComponents.ROOM_ID, designId);
+                    // Se a sala tem nome, o item leva esse nome (facil distinguir
+                    // CIs diferentes no inventario).
                     String roomName = IcRoomState.get(serverWorld.getServer()).getRoomName(designId);
                     if (!roomName.isEmpty()) {
                         stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_NAME,
@@ -114,10 +116,6 @@ public class IcBlock extends Block implements BlockEntityProvider {
         return getWeakRedstonePower(state, world, pos, direction);
     }
 
-    // ATENCAO: a assinatura exata deste metodo (onUse) muda com frequencia entre
-    // versoes do Minecraft. Se der erro de compilacao aqui, deixe o IDE sugerir
-    // a assinatura correta pra sua versao (geralmente so muda a ordem/presenca
-    // do parametro Hand) e me manda o erro que eu ajusto.
     @Override
     protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
         if (world.isClient) {
@@ -137,7 +135,7 @@ public class IcBlock extends Block implements BlockEntityProvider {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
-        if (type != ModIcBlockEntities.IC_BLOCK_ENTITY) {
+        if (type != ModBlockEntities.IC_BLOCK_ENTITY) {
             return null;
         }
         return (BlockEntityTicker<T>) (BlockEntityTicker<IcBlockEntity>) IcBlockEntity::tick;

@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_block" }
+  },
+  "result": {
+    "id": "n2t-mine:ic_block",
+    "count": 6
+  }
+}

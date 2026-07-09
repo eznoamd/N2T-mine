@@ -37,12 +37,12 @@ public class IcExitBlock extends Block implements BlockEntityProvider {
             return ActionResult.PASS;
         }
 
-        // Deriva o roomId pela posicao e busca o nome atual da sala.
+        // Deriva o roomId (design) pela posicao e busca o nome atual da sala.
         int roomId = IcRoomState.roomIdFromInsidePos(pos);
         String name = IcRoomState.get(serverWorld.getServer()).getRoomName(roomId);
 
-        // Abre o menu (renomear / sair / cancelar). O teleporte de saida agora
-        // acontece pelo botao "Sair" do menu (via pacote de rede).
+        // Abre o menu (renomear / sair / cancelar). O teleporte de saida acontece
+        // pelo botao "Sair" do menu (via pacote de rede).
         serverPlayer.openHandledScreen(new ExtendedScreenHandlerFactory<IcExitData>() {
             @Override
             public Text getDisplayName() {

@@ -15,6 +15,5 @@ public class ModRecipes {
     );
 
     public static void initialize() {
-        // Forca o carregamento estatico desta classe
     }
 }

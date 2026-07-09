@@ -1,7 +1,7 @@
 package com.enzo.n2tmine.ic.recipe;
 
 import com.enzo.n2tmine.ic.ModComponents;
-import com.enzo.n2tmine.ic.ModIcBlocks;
+import com.enzo.n2tmine.ic.ModBlocks;
 import net.minecraft.block.Blocks;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
@@ -35,7 +35,7 @@ public class IcCopyRecipe extends SpecialCraftingRecipe {
             ItemStack stack = input.getStackInSlot(i);
             if (stack.isEmpty()) continue;
 
-            if (stack.isOf(ModIcBlocks.IC_BLOCK.asItem())) {
+            if (stack.isOf(ModBlocks.IC_BLOCK.asItem())) {
                 // So copia CI que ja tem sala associada.
                 if (stack.get(ModComponents.ROOM_ID) == null) return false;
                 icComRoom++;
@@ -53,12 +53,12 @@ public class IcCopyRecipe extends SpecialCraftingRecipe {
     public ItemStack craft(CraftingRecipeInput input, RegistryWrapper.WrapperLookup lookup) {
         for (int i = 0; i < input.getSize(); i++) {
             ItemStack stack = input.getStackInSlot(i);
-            if (stack.isOf(ModIcBlocks.IC_BLOCK.asItem())) {
+            if (stack.isOf(ModBlocks.IC_BLOCK.asItem())) {
                 Integer roomId = stack.get(ModComponents.ROOM_ID);
                 if (roomId != null) {
                     // Resultado: 2 copias identicas, mesma sala. Ambos os ingredientes
                     // sao consumidos, entao voce sai com 2 CIs (original + copia).
-                    ItemStack result = new ItemStack(ModIcBlocks.IC_BLOCK, 2);
+                    ItemStack result = new ItemStack(ModBlocks.IC_BLOCK, 2);
                     result.set(ModComponents.ROOM_ID, roomId);
                     if (stack.contains(DataComponentTypes.CUSTOM_NAME)) {
                         result.set(DataComponentTypes.CUSTOM_NAME, stack.get(DataComponentTypes.CUSTOM_NAME));

@@ -17,7 +17,7 @@ public class ModNetworking {
         PayloadTypeRegistry.playC2S().register(RenameRoomPayload.ID, RenameRoomPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(ExitRoomPayload.ID, ExitRoomPayload.CODEC);
 
-        // Handler: renomear sala
+        // Handler: renomear sala (design)
         ServerPlayNetworking.registerGlobalReceiver(RenameRoomPayload.ID, (payload, context) -> {
             ServerPlayerEntity player = context.player();
             MinecraftServer server = player.getServer();

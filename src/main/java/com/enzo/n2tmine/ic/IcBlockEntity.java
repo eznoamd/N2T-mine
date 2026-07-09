@@ -26,14 +26,11 @@ public class IcBlockEntity extends BlockEntity {
 
     private final Map<Direction, Integer> outputPower = new EnumMap<>(Direction.class);
 
-    // Nome do design, cacheado e sincronizado pro cliente (pra desenhar em cima do bloco).
-    private String cachedName = "";
-
     // Transiente: re-forca mestre+instancia uma vez por carregamento.
     private boolean chunkForced = false;
 
     public IcBlockEntity(BlockPos pos, BlockState state) {
-        super(ModIcBlockEntities.IC_BLOCK_ENTITY, pos, state);
+        super(ModBlockEntities.IC_BLOCK_ENTITY, pos, state);
         for (Direction dir : SIDES) {
             outputPower.put(dir, 0);
         }
@@ -41,11 +38,6 @@ public class IcBlockEntity extends BlockEntity {
 
     public int getOutputPower(Direction direction) {
         return outputPower.getOrDefault(direction, 0);
-    }
-
-    /** Nome do design (cacheado, disponivel no cliente pra renderizar em cima). */
-    public String getCachedName() {
-        return cachedName;
     }
 
     /** O design (mestre) deste bloco -- e isso que vai no item ao quebrar. */
@@ -122,15 +114,6 @@ public class IcBlockEntity extends BlockEntity {
         ServerWorld icWorld = serverWorld.getServer().getWorld(ModDimensions.IC_WORLD);
         if (icWorld == null) return;
 
-        // Mantem o nome do design em cache e sincroniza com o cliente quando muda,
-        // pra o renderizador desenhar em cima do bloco.
-        String currentName = IcRoomState.get(serverWorld.getServer()).getRoomName(be.masterRoomId);
-        if (!currentName.equals(be.cachedName)) {
-            be.cachedName = currentName;
-            serverWorld.updateListeners(pos, state, state, net.minecraft.block.Block.NOTIFY_ALL);
-            be.markDirty();
-        }
-
         // O I/O deste bloco roda na sua INSTANCIA privada (nao no mestre).
         BlockPos origin = IcRoomState.get(serverWorld.getServer()).getRoomOrigin(be.instanceRoomId);
         int max = IcRoomState.SIZE - 1;
@@ -187,7 +170,6 @@ public class IcBlockEntity extends BlockEntity {
         super.writeNbt(nbt, registries);
         nbt.putInt("masterRoomId", masterRoomId);
         nbt.putInt("instanceRoomId", instanceRoomId);
-        nbt.putString("cachedName", cachedName);
     }
 
     @Override
@@ -200,20 +182,5 @@ public class IcBlockEntity extends BlockEntity {
             masterRoomId = nbt.getInt("roomId");
         }
         instanceRoomId = nbt.contains("instanceRoomId") ? nbt.getInt("instanceRoomId") : -1;
-        cachedName = nbt.contains("cachedName") ? nbt.getString("cachedName") : "";
-    }
-
-    // --- Sincronizacao com o cliente (pra o renderizador ver o nome) ---
-
-    @Override
-    public net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket toUpdatePacket() {
-        return net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket.create(this);
-    }
-
-    @Override
-    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registries) {
-        NbtCompound nbt = new NbtCompound();
-        writeNbt(nbt, registries);
-        return nbt;
     }
 }

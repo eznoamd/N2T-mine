@@ -14,7 +14,7 @@ import net.minecraft.text.Text;
 public class IcExitScreen extends HandledScreen<IcExitScreenHandler> {
 
     private TextFieldWidget nameField;
-    private long savedMessageUntil = 0L; // timestamp (ms) ate quando mostrar "Salvo!"
+    private long savedMessageUntil = 0L;
 
     public IcExitScreen(IcExitScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -40,7 +40,7 @@ public class IcExitScreen extends HandledScreen<IcExitScreenHandler> {
         // Botao: salvar nome
         addDrawableChild(ButtonWidget.builder(Text.literal("Salvar nome"), b -> {
             ClientPlayNetworking.send(new RenameRoomPayload(this.handler.getRoomId(), this.nameField.getText()));
-            this.savedMessageUntil = System.currentTimeMillis() + 2000L; // mostra "Salvo!" por 2s
+            this.savedMessageUntil = System.currentTimeMillis() + 2000L;
         }).dimensions(left + 20, top + 68, 180, 20).build());
 
         // Botao: sair da sala
@@ -58,27 +58,49 @@ public class IcExitScreen extends HandledScreen<IcExitScreenHandler> {
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
         int left = (this.width - this.backgroundWidth) / 2;
         int top = (this.height - this.backgroundHeight) / 2;
-        // Painel de fundo simples (sem textura customizada)
         context.fill(left, top, left + this.backgroundWidth, top + this.backgroundHeight, 0xF0202020);
         context.drawBorder(left, top, this.backgroundWidth, this.backgroundHeight, 0xFF000000);
     }
 
     @Override
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
-        // So o titulo; nao desenhamos o label de inventario (nao ha inventario).
         context.drawText(this.textRenderer, this.title, 20, 12, 0xFFFFFF, false);
         context.drawText(this.textRenderer, Text.literal("Nome da sala:"), 20, 30, 0xA0A0A0, false);
-
-        // Mensagem "Salvo!" em verde, por alguns segundos apos salvar.
         if (System.currentTimeMillis() < this.savedMessageUntil) {
             context.drawText(this.textRenderer, Text.literal("Salvo!"), 110, 30, 0x55FF55, false);
         }
     }
 
     @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // Se o campo de nome esta focado, ELE processa a tecla PRIMEIRO. Sem isso,
+        // a HandledScreen intercepta a tecla de inventario (E) e fecha o menu antes
+        // do campo receber a letra -- e por isso o 'e' fechava a janela.
+        // ENTER (257/335) e ESC (256) seguem o comportamento normal.
+        if (this.nameField != null && this.nameField.isFocused()
+                && keyCode != 257 && keyCode != 335 && keyCode != 256) {
+            this.nameField.keyPressed(keyCode, scanCode, modifiers);
+            return true; // a letra em si entra pelo charTyped abaixo
+        }
+        // Fora do campo, a tecla de inventario (E) tambem nao fecha o menu.
+        if (this.client != null
+                && this.client.options.inventoryKey.matchesKey(keyCode, scanCode)) {
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char chr, int modifiers) {
+        // Envia a digitacao (inclusive 'e') pro campo focado.
+        if (this.nameField != null && this.nameField.isFocused()) {
+            return this.nameField.charTyped(chr, modifiers);
+        }
+        return super.charTyped(chr, modifiers);
+    }
+
+    @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        // HandledScreen.render ja desenha o fundo escurecido + drawBackground +
-        // drawForeground; so acrescentamos o tooltip por cima.
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
     }

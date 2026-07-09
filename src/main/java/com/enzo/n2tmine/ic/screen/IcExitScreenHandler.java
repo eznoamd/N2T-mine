@@ -5,11 +5,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 
-/**
- * ScreenHandler do menu do bloco de saida. Nao tem slots de inventario -- e um
- * menu puramente de botoes/texto -- entao quickMove devolve vazio e canUse e
- * sempre verdadeiro.
- */
+/** ScreenHandler do menu do bloco de saida. Sem slots -- campo de nome + botoes. */
 public class IcExitScreenHandler extends ScreenHandler {
 
     private final int roomId;

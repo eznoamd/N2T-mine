@@ -15,7 +15,7 @@ public class IcPortBlockEntity extends BlockEntity {
     private PortRole role = PortRole.INPUT;              // toda porta comeca como ENTRADA
 
     public IcPortBlockEntity(BlockPos pos, BlockState state) {
-        super(ModIcBlockEntities.IC_PORT_BLOCK_ENTITY, pos, state);
+        super(ModBlockEntities.IC_PORT_BLOCK_ENTITY, pos, state);
     }
 
     public int getInjectedPower() {

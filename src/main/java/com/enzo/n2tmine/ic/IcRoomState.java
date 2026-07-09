@@ -197,7 +197,7 @@ public class IcRoomState extends PersistentState {
                     BlockPos p = origin.add(x, y, z);
                     boolean isWall = x == 0 || x == max || z == 0 || z == max || y == 0 || y == HEIGHT - 1;
                     icWorld.setBlockState(p, isWall
-                            ? Blocks.STONE_BRICKS.getDefaultState()
+                            ? ModBlocks.IC_WALL.getDefaultState()
                             : Blocks.AIR.getDefaultState());
                 }
             }
@@ -211,12 +211,18 @@ public class IcRoomState extends PersistentState {
         placePort(icWorld, origin.add(0, portY, mid), Direction.WEST);
         placePort(icWorld, origin.add(max, portY, mid), Direction.EAST);
 
+        // Marcadores de orientacao, centralizados no topo das paredes norte e sul
+        // (ultima camada abaixo do teto).
+        int markerY = HEIGHT - 2;
+        icWorld.setBlockState(origin.add(mid, markerY, 0), ModBlocks.IC_MARKER_NORTH.getDefaultState());
+        icWorld.setBlockState(origin.add(mid, markerY, max), ModBlocks.IC_MARKER_SOUTH.getDefaultState());
+
         BlockPos exitPos = origin.add(mid, 0, mid);
-        icWorld.setBlockState(exitPos, ModIcBlocks.IC_EXIT_BLOCK.getDefaultState());
+        icWorld.setBlockState(exitPos, ModBlocks.IC_EXIT_BLOCK.getDefaultState());
     }
 
     private void placePort(ServerWorld icWorld, BlockPos pos, Direction outwardDirection) {
-        icWorld.setBlockState(pos, ModIcBlocks.IC_PORT_BLOCK.getDefaultState());
+        icWorld.setBlockState(pos, ModBlocks.IC_PORT_BLOCK.getDefaultState());
         if (icWorld.getBlockEntity(pos) instanceof IcPortBlockEntity portBe) {
             portBe.setInwardDirection(outwardDirection.getOpposite());
         }

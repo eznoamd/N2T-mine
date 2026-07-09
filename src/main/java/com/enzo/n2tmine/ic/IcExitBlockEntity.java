@@ -21,7 +21,7 @@ public class IcExitBlockEntity extends BlockEntity {
     private BlockPos returnPos;
 
     public IcExitBlockEntity(BlockPos pos, BlockState state) {
-        super(ModIcBlockEntities.IC_EXIT_BLOCK_ENTITY, pos, state);
+        super(ModBlockEntities.IC_EXIT_BLOCK_ENTITY, pos, state);
     }
 
     public void setReturnLocation(RegistryKey<World> dim, BlockPos pos) {

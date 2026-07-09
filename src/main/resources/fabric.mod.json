@@ -3,7 +3,7 @@
 	"id": "n2t-mine",
 	"version": "${version}",
 	"name": "N2T-mine",
-	"description": "A mod that attempts to make basic logic CIs to Minecraft.",
+	"description": "Adiciona blocos de Circuito Integrado ao Minecraft: cada CI tem uma sala interna onde voce monta logica de redstone, com portas de entrada/saida configuraveis. CIs podem ser copiados e aninhados uns nos outros.",
 	"authors": [
 		"Ezno AMD"
 	],

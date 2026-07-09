@@ -22,6 +22,5 @@ public class ModComponents {
     );
 
     public static void initialize() {
-        // Apenas forca o carregamento estatico desta classe
     }
 }
